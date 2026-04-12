@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Influence & Diffusion in Social Networks</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: #0f0f23; font-family: Arial, sans-serif; color: white; }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 40px;
+            text-align: center;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .header h1 {
+            font-size: 38px;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #aaaaaa;
+            font-size: 16px;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            padding: 25px;
+            background-color: #16213e;
+            border-bottom: 1px solid #2a2a4a;
+            flex-wrap: wrap;
+        }
+
+        .stat { text-align: center; }
+        .stat-number { font-size: 30px; font-weight: bold; color: #3498db; }
+        .stat-label { font-size: 13px; color: #aaaaaa; margin-top: 5px; }
+
+        .section {
+            padding: 40px;
+            border-bottom: 1px solid #2a2a4a;
+            text-align: center;
+        }
+
+        .section-title {
+            font-size: 24px;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+
+        .section-description {
+            color: #aaaaaa;
+            font-size: 14px;
+            margin-bottom: 25px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.7;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #3498db, #2ecc71);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            text-decoration: none;
+            margin: 10px;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover { opacity: 0.85; }
+
+        .btn-orange {
+            background: linear-gradient(135deg, #f39c12, #e74c3c);
+        }
+
+        .btn-purple {
+            background: linear-gradient(135deg, #9b59b6, #3498db);
+        }
+
+        .insights {
+            background-color: #16213e;
+            border: 1px solid #2a2a4a;
+            border-radius: 10px;
+            padding: 25px;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: left;
+        }
+
+        .insights h3 {
+            color: #2ecc71;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .insight-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #2a2a4a;
+            color: #cccccc;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .insight-item:last-child { border-bottom: none; }
+        .highlight { color: #3498db; font-weight: bold; }
+
+        .footer {
+            text-align: center;
+            padding: 25px;
+            color: #aaaaaa;
+            font-size: 13px;
+            background-color: #16213e;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>Influence & Diffusion in Social Networks</h1>
+        <p>Saniah Thompson & Rosa Angeles &nbsp;|&nbsp; IFSC 4345/5345 Information Visualization</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-bar">
+        <div class="stat">
+            <div class="stat-number">9,447</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat">
+            <div class="stat-number">9,999</div>
+            <div class="stat-label">Connections</div>
+        </div>
+        <div class="stat">
+            <div class="stat-number">96</div>
+            <div class="stat-label">Communities</div>
+        </div>
+        <div class="stat">
+            <div class="stat-number">10,000</div>
+            <div class="stat-label">Tweets Analyzed</div>
+        </div>
+        <div class="stat">
+            <div class="stat-number">pjohnson</div>
+            <div class="stat-label">Most Influential User</div>
+        </div>
+    </div>
+
+    <!-- Network -->
+    <div class="section">
+        <div class="section-title">Network Visualization</div>
+        <div class="section-description">
+            Interactive network showing all 9,447 users and their retweet connections.
+            Node size = influence level. Node color = community group.
+            Hover over any node to see user details. Scroll to zoom. Drag to explore.
+        </div>
+        <a href="network.html" target="_blank" class="btn">
+            Open Network Visualization
+        </a>
+    </div>
+
+    <!-- Bar Chart -->
+    <div class="section">
+        <div class="section-title">Most Influential Users</div>
+        <div class="section-description">
+            Bar chart ranking the top 20 most influential users.
+            Switch between Degree, Betweenness, and Eigenvector centrality
+            using the buttons at the top of the chart.
+        </div>
+        <a href="barchart.html" target="_blank" class="btn btn-orange">
+            Open Influential Users Chart
+        </a>
+    </div>
+
+    <!-- Timeline -->
+    <div class="section">
+        <div class="section-title">Timeline Analysis</div>
+        <div class="section-description">
+            Charts showing how tweet activity grew over time and
+            what hours of the day people are most active.
+            Red bars = business hours, Blue bars = off hours.
+        </div>
+        <a href="timeline.html" target="_blank" class="btn btn-purple">
+            Open Timeline Analysis
+        </a>
+    </div>
+
+    <!-- Key Insights -->
+    <div class="section">
+        <div class="section-title">Key Findings</div>
+        <div class="insights">
+            <h3>What the data revealed:</h3>
+            <div class="insight-item">
+                <span class="highlight">Most Influential User:</span>
+                pjohnson ranks #1 in both degree and betweenness centrality,
+                meaning they have the most connections AND act as a bridge between different communities.
+            </div>
+            <div class="insight-item">
+                <span class="highlight">96 Communities Detected:</span>
+                The Louvain algorithm identified 96 distinct clusters of users
+                who frequently retweet each other, shown as different colors in the network.
+            </div>
+            <div class="insight-item">
+                <span class="highlight">Steady Spread:</span>
+                Tweet activity was consistent from January to April 2023,
+                with approximately 2,000 tweets per month showing sustained engagement.
+            </div>
+            <div class="insight-item">
+                <span class="highlight">Business Hours Activity:</span>
+                Misinformation spreads slightly more during business hours (9am-5pm),
+                suggesting users engage with content during work breaks.
+            </div>
+            <div class="insight-item">
+                <span class="highlight">cwilliams:</span>
+                Tops eigenvector centrality, meaning they are connected to
+                other highly influential users — a key amplifier in the network.
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        Influence & Diffusion in Social Networks &nbsp;|&nbsp;
+        Saniah Thompson & Rosa Angeles &nbsp;|&nbsp;
+        IFSC 4345/5345 Information Visualization
+    </div>
+
+</body>
+</html>
