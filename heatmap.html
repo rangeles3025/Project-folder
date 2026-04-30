@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Tweet Activity Heatmap — Influence & Diffusion in Social Networks</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background-color: #0f0f23; font-family: Arial, sans-serif; color: white; }
+
+  .header {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    padding: 30px 40px;
+    text-align: center;
+    border-bottom: 2px solid #3498db;
+  }
+  .header h1 { font-size: 28px; color: #3498db; margin-bottom: 8px; }
+  .header p { color: #aaaaaa; font-size: 14px; }
+
+  .task-box {
+    background: #16213e;
+    border-left: 4px solid #2ecc71;
+    margin: 25px 40px;
+    padding: 15px 20px;
+    border-radius: 4px;
+  }
+  .task-box strong { color: #2ecc71; }
+  .task-box p { color: #cccccc; font-size: 14px; line-height: 1.6; }
+
+  .chart-container {
+    padding: 10px 40px 30px;
+    overflow-x: auto;
+  }
+
+  .y-label {
+    font-size: 13px;
+    fill: #aaaaaa;
+  }
+  .x-label {
+    font-size: 11px;
+    fill: #aaaaaa;
+  }
+  .cell { cursor: pointer; stroke: #0f0f23; stroke-width: 1.5; }
+  .cell:hover { stroke: white; stroke-width: 2; }
+
+  .tooltip {
+    position: absolute;
+    background: #1a1a2e;
+    border: 1px solid #3498db;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: white;
+    pointer-events: none;
+    display: none;
+  }
+  .tooltip strong { color: #3498db; }
+
+  .legend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 10px 0 20px;
+    font-size: 12px;
+    color: #aaaaaa;
+  }
+  .legend-bar {
+    width: 200px;
+    height: 12px;
+    border-radius: 3px;
+    background: linear-gradient(to right, #0d2137, #1a5276, #2980b9, #3498db, #5dade2, #85c1e9);
+  }
+
+  .insight-box {
+    background: #16213e;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    margin: 0 40px 30px;
+    padding: 20px 25px;
+  }
+  .insight-box h3 { color: #2ecc71; font-size: 16px; margin-bottom: 12px; }
+  .insight-item { color: #cccccc; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #2a2a4a; line-height: 1.5; }
+  .insight-item:last-child { border-bottom: none; }
+  .hl { color: #3498db; font-weight: bold; }
+
+  .footer {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-size: 12px;
+    background: #16213e;
+    border-top: 1px solid #2a2a4a;
+  }
+  .back-btn {
+    display: inline-block;
+    margin: 20px 40px;
+    padding: 10px 25px;
+    background: linear-gradient(135deg, #3498db, #2ecc71);
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Tweet Activity Heatmap</h1>
+  <p>When does misinformation spread? — Hour-by-Day analysis of 10,000 tweets (Jan–Apr 2023)</p>
+</div>
+
+<div class="task-box">
+  <p><strong>Task this visualization answers:</strong> At what specific days and times do users in this network post most actively? This helps identify the optimal windows for misinformation to spread and when monitoring efforts should be concentrated.</p>
+</div>
+
+<div class="legend">
+  <span>Low activity</span>
+  <div class="legend-bar"></div>
+  <span>High activity</span>
+</div>
+
+<div class="chart-container">
+  <svg id="heatmap"></svg>
+</div>
+
+<div class="insight-box">
+  <h3>What this heatmap reveals:</h3>
+  <div class="insight-item"><span class="hl">Saturday has the lowest overall activity</span> — consistent across most hours of the day, suggesting the network is more active on weekdays.</div>
+  <div class="insight-item"><span class="hl">Tuesday 9AM and Wednesday 3PM</span> show the highest single-cell tweet counts — peak windows for potential misinformation bursts.</div>
+  <div class="insight-item"><span class="hl">Activity is surprisingly uniform</span> across all 24 hours, suggesting this network has globally distributed users rather than a single timezone.</div>
+  <div class="insight-item"><span class="hl">Sunday evenings (5–9 PM)</span> show a slight uptick, consistent with users engaging with content before the workweek starts.</div>
+</div>
+
+<a href="index.html" class="back-btn">← Back to Dashboard</a>
+
+<div class="footer">
+  Influence & Diffusion in Social Networks &nbsp;|&nbsp; Saniah Thompson & Rosa Angeles &nbsp;|&nbsp; IFSC 4345/5345
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const data = [{"day": 0, "hour": 0, "count": 60}, {"day": 0, "hour": 1, "count": 68}, {"day": 0, "hour": 2, "count": 56}, {"day": 0, "hour": 3, "count": 64}, {"day": 0, "hour": 4, "count": 71}, {"day": 0, "hour": 5, "count": 63}, {"day": 0, "hour": 6, "count": 71}, {"day": 0, "hour": 7, "count": 64}, {"day": 0, "hour": 8, "count": 71}, {"day": 0, "hour": 9, "count": 71}, {"day": 0, "hour": 10, "count": 54}, {"day": 0, "hour": 11, "count": 63}, {"day": 0, "hour": 12, "count": 51}, {"day": 0, "hour": 13, "count": 56}, {"day": 0, "hour": 14, "count": 57}, {"day": 0, "hour": 15, "count": 56}, {"day": 0, "hour": 16, "count": 64}, {"day": 0, "hour": 17, "count": 69}, {"day": 0, "hour": 18, "count": 69}, {"day": 0, "hour": 19, "count": 64}, {"day": 0, "hour": 20, "count": 59}, {"day": 0, "hour": 21, "count": 44}, {"day": 0, "hour": 22, "count": 40}, {"day": 0, "hour": 23, "count": 56}, {"day": 1, "hour": 0, "count": 67}, {"day": 1, "hour": 1, "count": 61}, {"day": 1, "hour": 2, "count": 53}, {"day": 1, "hour": 3, "count": 72}, {"day": 1, "hour": 4, "count": 63}, {"day": 1, "hour": 5, "count": 50}, {"day": 1, "hour": 6, "count": 51}, {"day": 1, "hour": 7, "count": 65}, {"day": 1, "hour": 8, "count": 53}, {"day": 1, "hour": 9, "count": 78}, {"day": 1, "hour": 10, "count": 62}, {"day": 1, "hour": 11, "count": 57}, {"day": 1, "hour": 12, "count": 72}, {"day": 1, "hour": 13, "count": 48}, {"day": 1, "hour": 14, "count": 44}, {"day": 1, "hour": 15, "count": 52}, {"day": 1, "hour": 16, "count": 60}, {"day": 1, "hour": 17, "count": 73}, {"day": 1, "hour": 18, "count": 63}, {"day": 1, "hour": 19, "count": 53}, {"day": 1, "hour": 20, "count": 55}, {"day": 1, "hour": 21, "count": 64}, {"day": 1, "hour": 22, "count": 57}, {"day": 1, "hour": 23, "count": 62}, {"day": 2, "hour": 0, "count": 56}, {"day": 2, "hour": 1, "count": 58}, {"day": 2, "hour": 2, "count": 61}, {"day": 2, "hour": 3, "count": 70}, {"day": 2, "hour": 4, "count": 55}, {"day": 2, "hour": 5, "count": 54}, {"day": 2, "hour": 6, "count": 65}, {"day": 2, "hour": 7, "count": 60}, {"day": 2, "hour": 8, "count": 59}, {"day": 2, "hour": 9, "count": 76}, {"day": 2, "hour": 10, "count": 51}, {"day": 2, "hour": 11, "count": 65}, {"day": 2, "hour": 12, "count": 50}, {"day": 2, "hour": 13, "count": 46}, {"day": 2, "hour": 14, "count": 71}, {"day": 2, "hour": 15, "count": 79}, {"day": 2, "hour": 16, "count": 54}, {"day": 2, "hour": 17, "count": 51}, {"day": 2, "hour": 18, "count": 57}, {"day": 2, "hour": 19, "count": 66}, {"day": 2, "hour": 20, "count": 65}, {"day": 2, "hour": 21, "count": 65}, {"day": 2, "hour": 22, "count": 40}, {"day": 2, "hour": 23, "count": 64}, {"day": 3, "hour": 0, "count": 63}, {"day": 3, "hour": 1, "count": 57}, {"day": 3, "hour": 2, "count": 60}, {"day": 3, "hour": 3, "count": 67}, {"day": 3, "hour": 4, "count": 55}, {"day": 3, "hour": 5, "count": 67}, {"day": 3, "hour": 6, "count": 69}, {"day": 3, "hour": 7, "count": 60}, {"day": 3, "hour": 8, "count": 54}, {"day": 3, "hour": 9, "count": 57}, {"day": 3, "hour": 10, "count": 64}, {"day": 3, "hour": 11, "count": 68}, {"day": 3, "hour": 12, "count": 59}, {"day": 3, "hour": 13, "count": 68}, {"day": 3, "hour": 14, "count": 62}, {"day": 3, "hour": 15, "count": 57}, {"day": 3, "hour": 16, "count": 59}, {"day": 3, "hour": 17, "count": 53}, {"day": 3, "hour": 18, "count": 46}, {"day": 3, "hour": 19, "count": 62}, {"day": 3, "hour": 20, "count": 72}, {"day": 3, "hour": 21, "count": 54}, {"day": 3, "hour": 22, "count": 55}, {"day": 3, "hour": 23, "count": 64}, {"day": 4, "hour": 0, "count": 49}, {"day": 4, "hour": 1, "count": 63}, {"day": 4, "hour": 2, "count": 73}, {"day": 4, "hour": 3, "count": 63}, {"day": 4, "hour": 4, "count": 58}, {"day": 4, "hour": 5, "count": 60}, {"day": 4, "hour": 6, "count": 58}, {"day": 4, "hour": 7, "count": 62}, {"day": 4, "hour": 8, "count": 55}, {"day": 4, "hour": 9, "count": 45}, {"day": 4, "hour": 10, "count": 69}, {"day": 4, "hour": 11, "count": 56}, {"day": 4, "hour": 12, "count": 60}, {"day": 4, "hour": 13, "count": 67}, {"day": 4, "hour": 14, "count": 58}, {"day": 4, "hour": 15, "count": 44}, {"day": 4, "hour": 16, "count": 78}, {"day": 4, "hour": 17, "count": 59}, {"day": 4, "hour": 18, "count": 63}, {"day": 4, "hour": 19, "count": 68}, {"day": 4, "hour": 20, "count": 52}, {"day": 4, "hour": 21, "count": 59}, {"day": 4, "hour": 22, "count": 71}, {"day": 4, "hour": 23, "count": 48}, {"day": 5, "hour": 0, "count": 51}, {"day": 5, "hour": 1, "count": 51}, {"day": 5, "hour": 2, "count": 57}, {"day": 5, "hour": 3, "count": 55}, {"day": 5, "hour": 4, "count": 56}, {"day": 5, "hour": 5, "count": 44}, {"day": 5, "hour": 6, "count": 56}, {"day": 5, "hour": 7, "count": 56}, {"day": 5, "hour": 8, "count": 56}, {"day": 5, "hour": 9, "count": 53}, {"day": 5, "hour": 10, "count": 56}, {"day": 5, "hour": 11, "count": 53}, {"day": 5, "hour": 12, "count": 53}, {"day": 5, "hour": 13, "count": 61}, {"day": 5, "hour": 14, "count": 56}, {"day": 5, "hour": 15, "count": 64}, {"day": 5, "hour": 16, "count": 38}, {"day": 5, "hour": 17, "count": 55}, {"day": 5, "hour": 18, "count": 58}, {"day": 5, "hour": 19, "count": 53}, {"day": 5, "hour": 20, "count": 66}, {"day": 5, "hour": 21, "count": 66}, {"day": 5, "hour": 22, "count": 74}, {"day": 5, "hour": 23, "count": 42}, {"day": 6, "hour": 0, "count": 69}, {"day": 6, "hour": 1, "count": 45}, {"day": 6, "hour": 2, "count": 63}, {"day": 6, "hour": 3, "count": 65}, {"day": 6, "hour": 4, "count": 56}, {"day": 6, "hour": 5, "count": 63}, {"day": 6, "hour": 6, "count": 47}, {"day": 6, "hour": 7, "count": 68}, {"day": 6, "hour": 8, "count": 56}, {"day": 6, "hour": 9, "count": 55}, {"day": 6, "hour": 10, "count": 42}, {"day": 6, "hour": 11, "count": 57}, {"day": 6, "hour": 12, "count": 60}, {"day": 6, "hour": 13, "count": 65}, {"day": 6, "hour": 14, "count": 60}, {"day": 6, "hour": 15, "count": 62}, {"day": 6, "hour": 16, "count": 55}, {"day": 6, "hour": 17, "count": 79}, {"day": 6, "hour": 18, "count": 65}, {"day": 6, "hour": 19, "count": 55}, {"day": 6, "hour": 20, "count": 63}, {"day": 6, "hour": 21, "count": 73}, {"day": 6, "hour": 22, "count": 61}, {"day": 6, "hour": 23, "count": 62}];
+
+const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const hours = Array.from({length: 24}, (_, i) => {
+  if (i === 0) return '12AM';
+  if (i < 12) return i + 'AM';
+  if (i === 12) return '12PM';
+  return (i - 12) + 'PM';
+});
+
+const margin = { top: 20, right: 30, bottom: 60, left: 100 };
+const cellW = 34;
+const cellH = 38;
+const width = cellW * 24 + margin.left + margin.right;
+const height = cellH * 7 + margin.top + margin.bottom;
+
+const svg = document.getElementById('heatmap');
+svg.setAttribute('width', width);
+svg.setAttribute('height', height);
+svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+const counts = data.map(d => d.count);
+const minCount = Math.min(...counts);
+const maxCount = Math.max(...counts);
+
+function colorScale(count) {
+  const t = (count - minCount) / (maxCount - minCount);
+  const r = Math.round(13 + t * (52 - 13 + 100 * t));
+  const g = Math.round(33 + t * (152 - 33));
+  const b = Math.round(55 + t * (219 - 55));
+  return `rgb(${Math.min(255,r)},${Math.min(255,g)},${Math.min(255,b)})`;
+}
+
+// Draw day labels
+days.forEach((day, i) => {
+  const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  text.setAttribute('x', margin.left - 10);
+  text.setAttribute('y', margin.top + i * cellH + cellH / 2 + 5);
+  text.setAttribute('text-anchor', 'end');
+  text.setAttribute('class', 'y-label');
+  text.textContent = day;
+  svg.appendChild(text);
+});
+
+// Draw hour labels
+hours.forEach((h, i) => {
+  if (i % 2 === 0) {
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', margin.left + i * cellW + cellW / 2);
+    text.setAttribute('y', margin.top + 7 * cellH + 18);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('class', 'x-label');
+    text.textContent = h;
+    svg.appendChild(text);
+  }
+});
+
+// X axis label
+const xAxisLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+xAxisLabel.setAttribute('x', margin.left + 24 * cellW / 2);
+xAxisLabel.setAttribute('y', height - 5);
+xAxisLabel.setAttribute('text-anchor', 'middle');
+xAxisLabel.setAttribute('fill', '#666');
+xAxisLabel.setAttribute('font-size', '12');
+xAxisLabel.textContent = 'Hour of Day';
+svg.appendChild(xAxisLabel);
+
+// Draw cells
+const tooltip = document.getElementById('tooltip');
+
+data.forEach(d => {
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  const x = margin.left + d.hour * cellW;
+  const y = margin.top + d.day * cellH;
+  rect.setAttribute('x', x);
+  rect.setAttribute('y', y);
+  rect.setAttribute('width', cellW - 2);
+  rect.setAttribute('height', cellH - 2);
+  rect.setAttribute('rx', 3);
+  rect.setAttribute('fill', colorScale(d.count));
+  rect.setAttribute('class', 'cell');
+
+  rect.addEventListener('mousemove', (e) => {
+    tooltip.style.display = 'block';
+    tooltip.style.left = (e.pageX + 12) + 'px';
+    tooltip.style.top = (e.pageY - 40) + 'px';
+    const hr = hours[d.hour];
+    tooltip.innerHTML = `<strong>${days[d.day]} at ${hr}</strong><br>Tweets: <strong>${d.count}</strong>`;
+  });
+  rect.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+  svg.appendChild(rect);
+});
+</script>
+</body>
+</html>

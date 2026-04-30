@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Community Size Treemap — Influence & Diffusion in Social Networks</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background-color: #0f0f23; font-family: Arial, sans-serif; color: white; }
+
+  .header {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    padding: 30px 40px;
+    text-align: center;
+    border-bottom: 2px solid #3498db;
+  }
+  .header h1 { font-size: 28px; color: #3498db; margin-bottom: 8px; }
+  .header p { color: #aaaaaa; font-size: 14px; }
+
+  .task-box {
+    background: #16213e;
+    border-left: 4px solid #2ecc71;
+    margin: 25px 40px;
+    padding: 15px 20px;
+    border-radius: 4px;
+  }
+  .task-box strong { color: #2ecc71; }
+  .task-box p { color: #cccccc; font-size: 14px; line-height: 1.6; }
+
+  .chart-container {
+    padding: 10px 40px 20px;
+  }
+
+  #treemap-svg { width: 100%; display: block; cursor: pointer; }
+
+  .tooltip {
+    position: absolute;
+    background: #1a1a2e;
+    border: 1px solid #3498db;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: white;
+    pointer-events: none;
+    display: none;
+  }
+  .tooltip strong { color: #3498db; }
+
+  .insight-box {
+    background: #16213e;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    margin: 0 40px 30px;
+    padding: 20px 25px;
+  }
+  .insight-box h3 { color: #2ecc71; font-size: 16px; margin-bottom: 12px; }
+  .insight-item { color: #cccccc; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #2a2a4a; line-height: 1.5; }
+  .insight-item:last-child { border-bottom: none; }
+  .hl { color: #3498db; font-weight: bold; }
+
+  .footer {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-size: 12px;
+    background: #16213e;
+    border-top: 1px solid #2a2a4a;
+  }
+  .back-btn {
+    display: inline-block;
+    margin: 20px 40px;
+    padding: 10px 25px;
+    background: linear-gradient(135deg, #3498db, #2ecc71);
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+  }
+  .sort-controls {
+    display: flex;
+    gap: 10px;
+    margin: 0 40px 15px;
+    flex-wrap: wrap;
+  }
+  .sort-btn {
+    padding: 8px 18px;
+    border: 1px solid #3498db;
+    background: transparent;
+    color: #3498db;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .sort-btn.active, .sort-btn:hover {
+    background: #3498db;
+    color: white;
+  }
+  .sort-label { color: #aaaaaa; font-size: 13px; display: flex; align-items: center; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Community Size Treemap</h1>
+  <p>How large are the detected communities? — Top 30 of 101 communities in the network</p>
+</div>
+
+<div class="task-box">
+  <p><strong>Task this visualization answers:</strong> Which communities in the retweet network have the most members, and how do their sizes compare? Larger communities have greater potential to amplify misinformation across the network. Area represents number of users in each community.</p>
+</div>
+
+<div class="sort-controls">
+  <span class="sort-label">Sort by:</span>
+  <button class="sort-btn active" onclick="sortBy('size', this)">Community Size</button>
+  <button class="sort-btn" onclick="sortBy('id', this)">Community ID</button>
+</div>
+
+<div class="chart-container">
+  <svg id="treemap-svg" height="480"></svg>
+</div>
+
+<div class="insight-box">
+  <h3>What the treemap reveals:</h3>
+  <div class="insight-item"><span class="hl">Community 41 is the largest</span> with 198 members — nearly twice the size of the smallest communities shown, making it the highest-risk group for amplifying misinformation.</div>
+  <div class="insight-item"><span class="hl">The top 5 communities are tightly clustered</span> in size (132–198 members), suggesting the network has multiple large hubs rather than one dominant group.</div>
+  <div class="insight-item"><span class="hl">101 communities total</span> were detected by the Louvain algorithm — this treemap shows the top 30, which together account for the majority of the network's users.</div>
+  <div class="insight-item"><span class="hl">Hover any block</span> to see the exact community size and its share of the top-30 population.</div>
+</div>
+
+<a href="index.html" class="back-btn">← Back to Dashboard</a>
+
+<div class="footer">
+  Influence & Diffusion in Social Networks &nbsp;|&nbsp; Saniah Thompson & Rosa Angeles &nbsp;|&nbsp; IFSC 4345/5345
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const rawData = [{"community": "Community 41", "size": 198}, {"community": "Community 38", "size": 197}, {"community": "Community 31", "size": 191}, {"community": "Community 34", "size": 157}, {"community": "Community 21", "size": 148}, {"community": "Community 36", "size": 136}, {"community": "Community 77", "size": 134}, {"community": "Community 56", "size": 133}, {"community": "Community 35", "size": 132}, {"community": "Community 23", "size": 132}, {"community": "Community 17", "size": 131}, {"community": "Community 45", "size": 131}, {"community": "Community 90", "size": 129}, {"community": "Community 89", "size": 129}, {"community": "Community 93", "size": 127}, {"community": "Community 18", "size": 119}, {"community": "Community 1", "size": 115}, {"community": "Community 26", "size": 113}, {"community": "Community 43", "size": 110}, {"community": "Community 0", "size": 108}, {"community": "Community 47", "size": 105}, {"community": "Community 92", "size": 105}, {"community": "Community 58", "size": 104}, {"community": "Community 5", "size": 103}, {"community": "Community 65", "size": 103}, {"community": "Community 91", "size": 102}, {"community": "Community 9", "size": 101}, {"community": "Community 32", "size": 101}, {"community": "Community 10", "size": 101}, {"community": "Community 81", "size": 100}];
+
+const colors = [
+  '#2980b9','#1abc9c','#8e44ad','#e67e22','#c0392b',
+  '#2471a3','#17a589','#76448a','#d35400','#a93226',
+  '#1f618d','#148f77','#6c3483','#ba4a00','#922b21',
+  '#1a5276','#117a65','#5b2c6f','#a04000','#7b241c',
+  '#154360','#0e6655','#4a235a','#873600','#641e16',
+  '#0d3349','#0b5345','#3b1f47','#6e2c00','#4d1212'
+];
+
+const tooltip = document.getElementById('tooltip');
+const svg = document.getElementById('treemap-svg');
+let currentData = [...rawData];
+
+function getWidth() {
+  return svg.parentElement.clientWidth - 80;
+}
+
+function squarify(items, x, y, w, h) {
+  if (items.length === 0) return [];
+  const total = items.reduce((s, d) => s + d.size, 0);
+  const area = w * h;
+  const rects = [];
+
+  let remaining = [...items];
+  let rx = x, ry = y, rw = w, rh = h;
+
+  while (remaining.length > 0) {
+    const rowItems = [];
+    let rowSum = 0;
+    const shortSide = Math.min(rw, rh);
+    const remainTotal = remaining.reduce((s, d) => s + d.size, 0);
+
+    for (let i = 0; i < remaining.length; i++) {
+      const testItems = [...rowItems, remaining[i]];
+      const testSum = rowSum + remaining[i].size;
+      const maxRatio = Math.max(...testItems.map(d => {
+        const t = (d.size / remainTotal) * (rw * rh);
+        return Math.max(shortSide * shortSide * testSum * testSum / (t * testSum * testSum),
+                        t * testSum * testSum / (shortSide * shortSide * testSum * testSum));
+      }));
+      if (rowItems.length === 0 || maxRatio <= Math.max(...rowItems.map(d => {
+        const t = (d.size / remainTotal) * (rw * rh);
+        return Math.max(shortSide * shortSide * rowSum * rowSum / (t * rowSum * rowSum),
+                        t * rowSum * rowSum / (shortSide * shortSide * rowSum * rowSum));
+      }))) {
+        rowItems.push(remaining[i]);
+        rowSum += remaining[i].size;
+      } else {
+        break;
+      }
+    }
+
+    remaining = remaining.slice(rowItems.length);
+    const rowFrac = rowSum / remainTotal;
+
+    if (rw <= rh) {
+      const rowH = rh * rowFrac;
+      let cx = rx;
+      rowItems.forEach(d => {
+        const cellW = (d.size / rowSum) * rw;
+        rects.push({ ...d, x: cx, y: ry, w: cellW, h: rowH });
+        cx += cellW;
+      });
+      ry += rowH;
+      rh -= rowH;
+    } else {
+      const rowW = rw * rowFrac;
+      let cy = ry;
+      rowItems.forEach(d => {
+        const cellH = (d.size / rowSum) * rh;
+        rects.push({ ...d, x: rx, y: cy, w: rowW, h: cellH });
+        cy += cellH;
+      });
+      rx += rowW;
+      rw -= rowW;
+    }
+  }
+  return rects;
+}
+
+function sortBy(key, btn) {
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (key === 'size') {
+    currentData = [...rawData].sort((a, b) => b.size - a.size);
+  } else {
+    currentData = [...rawData].sort((a, b) => {
+      const na = parseInt(a.community.replace('Community ', ''));
+      const nb = parseInt(b.community.replace('Community ', ''));
+      return na - nb;
+    });
+  }
+  draw();
+}
+
+function draw() {
+  const W = getWidth();
+  const H = 480;
+  svg.setAttribute('width', W);
+  svg.innerHTML = '';
+
+  const totalSize = currentData.reduce((s, d) => s + d.size, 0);
+  const rects = squarify(currentData, 0, 0, W, H);
+
+  rects.forEach((r, i) => {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', r.x + 1);
+    rect.setAttribute('y', r.y + 1);
+    rect.setAttribute('width', Math.max(0, r.w - 2));
+    rect.setAttribute('height', Math.max(0, r.h - 2));
+    rect.setAttribute('fill', colors[i % colors.length]);
+    rect.setAttribute('rx', 3);
+    rect.style.transition = 'opacity 0.2s';
+    g.appendChild(rect);
+
+    if (r.w > 50 && r.h > 30) {
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('x', r.x + r.w / 2);
+      label.setAttribute('y', r.y + r.h / 2 - (r.h > 50 ? 8 : 0));
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('fill', 'white');
+      label.setAttribute('font-size', Math.min(14, r.w / 8 + 4));
+      label.setAttribute('font-weight', 'bold');
+      label.setAttribute('pointer-events', 'none');
+      label.textContent = r.community.replace('Community ', 'C');
+      g.appendChild(label);
+
+      if (r.h > 50) {
+        const sub = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        sub.setAttribute('x', r.x + r.w / 2);
+        sub.setAttribute('y', r.y + r.h / 2 + 10);
+        sub.setAttribute('text-anchor', 'middle');
+        sub.setAttribute('fill', 'rgba(255,255,255,0.8)');
+        sub.setAttribute('font-size', Math.min(12, r.w / 10 + 3));
+        sub.setAttribute('pointer-events', 'none');
+        sub.textContent = r.size + ' users';
+        g.appendChild(sub);
+      }
+    }
+
+    g.addEventListener('mousemove', (e) => {
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.pageX + 12) + 'px';
+      tooltip.style.top = (e.pageY - 50) + 'px';
+      const pct = ((r.size / totalSize) * 100).toFixed(1);
+      tooltip.innerHTML = `<strong>${r.community}</strong><br>Members: <strong>${r.size}</strong><br>Share of top-30: <strong>${pct}%</strong>`;
+    });
+    g.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+    g.addEventListener('mouseenter', () => { rect.style.opacity = '0.8'; });
+    g.addEventListener('mouseleave', () => { rect.style.opacity = '1'; });
+
+    svg.appendChild(g);
+  });
+}
+
+draw();
+window.addEventListener('resize', draw);
+</script>
+</body>
+</html>

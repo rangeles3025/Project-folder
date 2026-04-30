@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Engagement Bubble Chart — Influence & Diffusion in Social Networks</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background-color: #0f0f23; font-family: Arial, sans-serif; color: white; }
+
+  .header {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    padding: 30px 40px;
+    text-align: center;
+    border-bottom: 2px solid #3498db;
+  }
+  .header h1 { font-size: 28px; color: #3498db; margin-bottom: 8px; }
+  .header p { color: #aaaaaa; font-size: 14px; }
+
+  .task-box {
+    background: #16213e;
+    border-left: 4px solid #2ecc71;
+    margin: 25px 40px;
+    padding: 15px 20px;
+    border-radius: 4px;
+  }
+  .task-box strong { color: #2ecc71; }
+  .task-box p { color: #cccccc; font-size: 14px; line-height: 1.6; }
+
+  .legend-row {
+    display: flex;
+    gap: 30px;
+    margin: 0 40px 10px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: #aaaaaa;
+    align-items: center;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .bubble-demo { border-radius: 50%; background: #3498db; opacity: 0.7; display: inline-block; }
+
+  .chart-container {
+    padding: 10px 40px 20px;
+    overflow-x: auto;
+  }
+
+  .tooltip {
+    position: absolute;
+    background: #1a1a2e;
+    border: 1px solid #3498db;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: white;
+    pointer-events: none;
+    display: none;
+    line-height: 1.8;
+    min-width: 160px;
+  }
+  .tooltip strong { color: #3498db; }
+
+  .insight-box {
+    background: #16213e;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    margin: 0 40px 30px;
+    padding: 20px 25px;
+  }
+  .insight-box h3 { color: #2ecc71; font-size: 16px; margin-bottom: 12px; }
+  .insight-item { color: #cccccc; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #2a2a4a; line-height: 1.5; }
+  .insight-item:last-child { border-bottom: none; }
+  .hl { color: #3498db; font-weight: bold; }
+
+  .axis-line { stroke: #2a2a4a; stroke-width: 1; }
+  .axis-text { fill: #666; font-size: 11px; }
+  .axis-label { fill: #aaaaaa; font-size: 13px; }
+  .grid-line { stroke: #1a2a3a; stroke-width: 1; stroke-dasharray: 4,3; }
+
+  .footer {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-size: 12px;
+    background: #16213e;
+    border-top: 1px solid #2a2a4a;
+  }
+  .back-btn {
+    display: inline-block;
+    margin: 20px 40px;
+    padding: 10px 25px;
+    background: linear-gradient(135deg, #3498db, #2ecc71);
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Engagement Bubble Chart</h1>
+  <p>Top 20 users — Retweets vs. Likes vs. Number of Tweets Posted</p>
+</div>
+
+<div class="task-box">
+  <p><strong>Task this visualization answers:</strong> Among the most retweeted users, which ones also generate high likes — signaling genuine influence vs. mechanical amplification? Bubble size represents the number of tweets each user posted. Users with large bubbles, high retweets, and high likes are the most effective spreaders of content.</p>
+</div>
+
+<div class="legend-row">
+  <div class="legend-item">
+    <div class="bubble-demo" style="width:10px;height:10px;"></div> 3 tweets posted
+  </div>
+  <div class="legend-item">
+    <div class="bubble-demo" style="width:16px;height:16px;"></div> 4 tweets posted
+  </div>
+  <div class="legend-item">
+    <div class="bubble-demo" style="width:22px;height:22px;"></div> 5–6 tweets posted
+  </div>
+  <div class="legend-item" style="color:#e74c3c;">
+    <span style="display:inline-block;width:14px;height:14px;background:#e74c3c;border-radius:50%;opacity:0.7;"></span> = pjohnson (most influential)
+  </div>
+</div>
+
+<div class="chart-container">
+  <svg id="bubble-svg"></svg>
+</div>
+
+<div class="insight-box">
+  <h3>What the bubble chart reveals:</h3>
+  <div class="insight-item"><span class="hl">pjohnson dominates</span> in both retweets (362) and likes (351) — the only user achieving top scores in both dimensions, confirming their status as the most influential spreader.</div>
+  <div class="insight-item"><span class="hl">amiller and udavis</span> have disproportionately high likes relative to retweets — suggesting their content is more appreciated than amplified, a different influence pattern.</div>
+  <div class="insight-item"><span class="hl">wmitchell and davidsmith</span> have high retweets but low likes — their content spreads widely but may not resonate emotionally, a pattern sometimes associated with coordinated amplification.</div>
+  <div class="insight-item"><span class="hl">Bubble size reveals efficiency:</span> pjohnson achieved the highest reach with only 6 tweets — the most efficient spreader in the dataset.</div>
+</div>
+
+<a href="index.html" class="back-btn">← Back to Dashboard</a>
+
+<div class="footer">
+  Influence & Diffusion in Social Networks &nbsp;|&nbsp; Saniah Thompson & Rosa Angeles &nbsp;|&nbsp; IFSC 4345/5345
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const data = [{"username": "pjohnson", "retweets": 362, "likes": 351, "tweets": 6}, {"username": "awilliams", "retweets": 306, "likes": 225, "tweets": 5}, {"username": "fsmith", "retweets": 301, "likes": 170, "tweets": 4}, {"username": "wmitchell", "retweets": 269, "likes": 123, "tweets": 4}, {"username": "nbrown", "retweets": 267, "likes": 203, "tweets": 5}, {"username": "davidsmith", "retweets": 263, "likes": 110, "tweets": 3}, {"username": "christopher64", "retweets": 261, "likes": 190, "tweets": 3}, {"username": "amiller", "retweets": 253, "likes": 271, "tweets": 4}, {"username": "ehernandez", "retweets": 251, "likes": 140, "tweets": 3}, {"username": "jessicawilliams", "retweets": 251, "likes": 216, "tweets": 4}, {"username": "michael07", "retweets": 231, "likes": 89, "tweets": 3}, {"username": "marksmith", "retweets": 227, "likes": 156, "tweets": 4}, {"username": "qsmith", "retweets": 217, "likes": 154, "tweets": 3}, {"username": "vbrown", "retweets": 213, "likes": 108, "tweets": 4}, {"username": "mbaker", "retweets": 209, "likes": 162, "tweets": 3}, {"username": "udavis", "retweets": 200, "likes": 231, "tweets": 3}, {"username": "lwilliams", "retweets": 199, "likes": 105, "tweets": 3}, {"username": "nwhite", "retweets": 199, "likes": 230, "tweets": 4}, {"username": "hsmith", "retweets": 199, "likes": 174, "tweets": 3}, {"username": "rebecca84", "retweets": 196, "likes": 123, "tweets": 2}];
+
+const margin = { top: 30, right: 120, bottom: 60, left: 70 };
+const W = Math.min(window.innerWidth - 80, 900);
+const H = 480;
+const innerW = W - margin.left - margin.right;
+const innerH = H - margin.top - margin.bottom;
+
+const svg = document.getElementById('bubble-svg');
+svg.setAttribute('width', W);
+svg.setAttribute('height', H);
+
+const minRT = Math.min(...data.map(d => d.retweets));
+const maxRT = Math.max(...data.map(d => d.retweets));
+const minLK = Math.min(...data.map(d => d.likes));
+const maxLK = Math.max(...data.map(d => d.likes));
+const minTW = Math.min(...data.map(d => d.tweets));
+const maxTW = Math.max(...data.map(d => d.tweets));
+
+function scaleX(v) { return margin.left + ((v - minRT) / (maxRT - minRT)) * innerW; }
+function scaleY(v) { return margin.top + innerH - ((v - minLK) / (maxLK - minLK)) * innerH; }
+function scaleR(v) { return 6 + ((v - minTW) / (maxTW - minTW)) * 14; }
+
+const ns = 'http://www.w3.org/2000/svg';
+
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(ns, tag);
+  Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+// Grid lines and axes
+const xTicks = [200, 240, 280, 320, 360];
+xTicks.forEach(v => {
+  el('line', { x1: scaleX(v), y1: margin.top, x2: scaleX(v), y2: margin.top + innerH, class: 'grid-line' }, svg);
+  const t = el('text', { x: scaleX(v), y: margin.top + innerH + 18, 'text-anchor': 'middle', class: 'axis-text' }, svg);
+  t.textContent = v;
+});
+
+const yTicks = [100, 150, 200, 250, 300, 350];
+yTicks.forEach(v => {
+  if (v >= minLK && v <= maxLK) {
+    el('line', { x1: margin.left, y1: scaleY(v), x2: margin.left + innerW, y2: scaleY(v), class: 'grid-line' }, svg);
+    const t = el('text', { x: margin.left - 8, y: scaleY(v) + 4, 'text-anchor': 'end', class: 'axis-text' }, svg);
+    t.textContent = v;
+  }
+});
+
+// Axis lines
+el('line', { x1: margin.left, y1: margin.top, x2: margin.left, y2: margin.top + innerH, class: 'axis-line' }, svg);
+el('line', { x1: margin.left, y1: margin.top + innerH, x2: margin.left + innerW, y2: margin.top + innerH, class: 'axis-line' }, svg);
+
+// Axis labels
+const xLabel = el('text', { x: margin.left + innerW / 2, y: H - 8, 'text-anchor': 'middle', class: 'axis-label' }, svg);
+xLabel.textContent = 'Total Retweets';
+
+const yLabel = el('text', { transform: `translate(14, ${margin.top + innerH / 2}) rotate(-90)`, 'text-anchor': 'middle', class: 'axis-label' }, svg);
+yLabel.textContent = 'Total Likes';
+
+// Diagonal reference line (equal retweets & likes)
+// Just a note box
+const noteG = el('g', {}, svg);
+const noteText = el('text', { x: margin.left + innerW - 5, y: margin.top + 15, 'text-anchor': 'end', fill: '#555', 'font-size': '11' }, noteG);
+noteText.textContent = 'Bubble size = # of tweets posted';
+
+const tooltip = document.getElementById('tooltip');
+
+// Draw bubbles (sorted so pjohnson is on top)
+const sorted = [...data].sort((a, b) => a.username === 'pjohnson' ? 1 : b.username === 'pjohnson' ? -1 : 0);
+
+sorted.forEach(d => {
+  const isPJ = d.username === 'pjohnson';
+  const color = isPJ ? '#e74c3c' : '#3498db';
+  const cx = scaleX(d.retweets);
+  const cy = scaleY(d.likes);
+  const r = scaleR(d.tweets);
+
+  const g = el('g', { cursor: 'pointer' }, svg);
+  const circle = el('circle', { cx, cy, r, fill: color, opacity: '0.75', stroke: isPJ ? '#ff6b6b' : '#5dade2', 'stroke-width': isPJ ? 2 : 1 }, g);
+
+  // Label for larger bubbles or pjohnson
+  if (r > 14 || isPJ) {
+    const lbl = el('text', { x: cx, y: cy - r - 4, 'text-anchor': 'middle', fill: 'white', 'font-size': '11', 'font-weight': isPJ ? 'bold' : 'normal', 'pointer-events': 'none' }, g);
+    lbl.textContent = d.username;
+  }
+
+  g.addEventListener('mousemove', (e) => {
+    tooltip.style.display = 'block';
+    tooltip.style.left = (e.pageX + 14) + 'px';
+    tooltip.style.top = (e.pageY - 60) + 'px';
+    tooltip.innerHTML = `<strong>@${d.username}</strong><br>Retweets: <strong>${d.retweets}</strong><br>Likes: <strong>${d.likes}</strong><br>Tweets posted: <strong>${d.tweets}</strong>`;
+  });
+  g.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+  g.addEventListener('mouseenter', () => circle.setAttribute('opacity', '1'));
+  g.addEventListener('mouseleave', () => circle.setAttribute('opacity', '0.75'));
+});
+</script>
+</body>
+</html>
